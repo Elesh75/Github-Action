@@ -1,0 +1,42 @@
+name: Terraform Workflow
+on:
+  push:
+    branches:
+      - master
+env:
+   AWS_ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
+   AWS_SECRET_ACCESSS_KEY: ${{ secrets.SECRET_KEY }} # this will be used to access aws when running terraform plan and this keys are unique to this particular repo(i.e repo secrets)   
+
+jobs:
+  deploy_infrastructure:
+    permissions:   # this is needed for our semantic versioning
+      contents: write
+      issues: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 1.1.9
+      
+    - name: Initialize Terraform
+      run: terraform init
+
+    - name: Fmt infrastructure changes
+      run: terraform fmt   # or terraform fmt -check this will check if your code is formatted and if not the workflow will fail and (without - check will fmt your code automatically)
+
+    - name: Validate infrastructure changes
+      run: terraform validate
+
+    #- name: Plan infrastructure changes
+     # run: terraform plan
+
+    - name: release
+      run: npx semantic-release
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}} # This is available by default 
